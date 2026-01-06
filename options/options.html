@@ -5,47 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Input Translate Ayarları</title>
     <link rel="stylesheet" href="options.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Çeviri Ayarları</h1>
-        <p>Çeviri profillerinizi ve kısayollarınızı buradan yönetebilirsiniz.</p>
-        
-        <div id="profiles-container">
-            <!-- Profiller buraya dinamik olarak eklenecek -->
+    <div class="main-wrapper">
+        <div class="container">
+            <header class="header">
+                <div class="logo-area">
+                    <img src="../assets/icon48.png" alt="Input Translate Logo" class="logo">
+                    <h1>Input Translate</h1>
+                </div>
+                <p class="subtitle">Çeviri profillerinizi ve kısayollarınızı yönetin.</p>
+            </header>
+            
+            <div id="profiles-container">
+                <!-- Profiller buraya dinamik olarak eklenecek -->
+            </div>
+
+            <div class="actions">
+                <button id="add-profile-btn" class="btn primary">
+                    <span class="icon-plus">+</span> Yeni Profil Ekle
+                </button>
+                <button id="save-btn" class="btn success">Değişiklikleri Kaydet</button>
+            </div>
+            
+            <div id="status"></div>
         </div>
 
-        <button id="add-profile-btn" class="btn primary">+ Yeni Profil Ekle</button>
-        <button id="save-btn" class="btn success">Kaydet</button>
-        
-        <div id="status"></div>
+        <footer class="footer">
+            <a href="https://truncgil.com" target="_blank" rel="noopener noreferrer">
+                Trunçgil Teknoloji
+            </a>
+            tarafından geliştirilmiştir.
+        </footer>
     </div>
 
     <!-- Profil Şablonu -->
     <template id="profile-template">
         <div class="profile-item">
-            <div class="form-group">
-                <label>Hedef Dil:</label>
-                <select class="target-lang">
-                    <option value="en">İngilizce (English)</option>
-                    <option value="tr">Türkçe (Turkish)</option>
-                    <option value="de">Almanca (German)</option>
-                    <option value="fr">Fransızca (French)</option>
-                    <option value="es">İspanyolca (Spanish)</option>
-                    <option value="it">İtalyanca (Italian)</option>
-                    <option value="ru">Rusça (Russian)</option>
-                    <option value="ja">Japonca (Japanese)</option>
-                    <option value="zh-CN">Çince (Chinese Simplified)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Kısayol Tuşu (Örn: Alt+1):</label>
-                <div class="shortcut-input-wrapper">
-                    <input type="text" class="shortcut-key" placeholder="Kısayola bas..." readonly>
-                    <button class="clear-shortcut" title="Temizle">x</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Hedef Dil</label>
+                    <div class="select-wrapper">
+                        <select class="target-lang">
+                            <option value="en">İngilizce (English)</option>
+                            <option value="tr">Türkçe (Turkish)</option>
+                            <option value="de">Almanca (German)</option>
+                            <option value="fr">Fransızca (French)</option>
+                            <option value="es">İspanyolca (Spanish)</option>
+                            <option value="it">İtalyanca (Italian)</option>
+                            <option value="ru">Rusça (Russian)</option>
+                            <option value="ja">Japonca (Japanese)</option>
+                            <option value="zh-CN">Çince (Chinese Simplified)</option>
+                            <option value="ar">Arapça (Arabic)</option>
+                            <option value="az">Azerice (Azerbaijani)</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="form-group">
+                    <label>Kısayol Tuşu</label>
+                    <div class="shortcut-input-wrapper">
+                        <input type="text" class="shortcut-key" placeholder="Tuş kombinasyonuna basın..." readonly>
+                        <button class="clear-shortcut" title="Temizle">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button class="remove-profile-btn btn danger" title="Profili Sil">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
-            <button class="remove-profile-btn btn danger">Sil</button>
         </div>
     </template>
 

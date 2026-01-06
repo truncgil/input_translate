@@ -109,9 +109,12 @@ function saveOptions() {
 
     chrome.storage.sync.set({ profiles: profiles }, () => {
         const status = document.getElementById('status');
-        status.textContent = 'Ayarlar kaydedildi!';
+        status.textContent = 'Ayarlar başarıyla kaydedildi! 🎉';
+        status.classList.add('show');
+        
         setTimeout(() => {
-            status.textContent = '';
+            status.classList.remove('show');
+            setTimeout(() => { status.textContent = ''; }, 300);
         }, 2000);
     });
 }
