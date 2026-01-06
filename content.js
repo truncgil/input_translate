@@ -101,16 +101,15 @@ function isEditable(element) {
 function handleSelection(e) {
     const el = e.target;
     
-    // Seçim yapılan element düzenlenebilir değilse ve butonun kendisi değilse çık
-    // (Butona tıklama durumunu kontrol etmek için shadow DOM'a bakmak gerekebilir, 
-    // ama mousedown handler'ı zaten işi çözüyor)
-    if (!isEditable(el) && (!floatingBtn || !floatingBtn.container.contains(el))) {
+    // Artık sadece editable alanlarda değil, HERHANGİ bir metin seçiminde çalışacak.
+    // Ancak butona tıklanınca gizlenmemeli.
+    if (floatingBtn && floatingBtn.container.contains(el)) {
         return;
     }
 
     activeElement = el;
 
-    // Seçim metnini al (hem input hem contenteditable için çalışır)
+    // Seçim metnini al
     const selection = window.getSelection();
     const text = selection.toString().trim();
 
@@ -126,22 +125,18 @@ function showButton(targetEl, event) {
         floatingBtn = createFloatingButton();
     }
 
-    // Pozisyon Hesaplama
-    // Google Translate ile çakışmayı önlemek için biraz daha yukarı alalım
-    // veya biraz sağa kaydıralım.
-    
     let top, left;
 
     // Mouse olayı ise ve koordinat varsa
     if (event && (event.type === 'mouseup' || event.type === 'keyup')) {
-        // Seçimin koordinatlarını al (range kullanarak daha hassas konumlandırma)
+        // Seçimin koordinatlarını al
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
             
             top = rect.top + window.scrollY - 35; // Seçimin hemen üstü
-            left = rect.right + window.scrollX + 5; // Seçimin sağ tarafı (Google solda çıkar genelde)
+            left = rect.right + window.scrollX + 5; // Seçimin sağ tarafı
         } else {
             // Fallback
             top = event.pageY - 40;
@@ -172,14 +167,17 @@ function hideButton() {
 }
 
 function handleButtonClick() {
-    // Varsayılan olarak ilk profili veya 'tr' kullan
-    const targetLang = (profiles.length > 0) ? profiles[0].targetLang : 'tr';
+    // Varsayılan olarak ilk profili veya 'en' kullan (Background akıllı seçim yapacak)
+    // Eğer profil yoksa varsayılan 'en' olsun.
+    const targetLang = (profiles.length > 0) ? profiles[0].targetLang : 'en';
     processTranslation(targetLang);
 }
 
 function handleKeydown(e) {
-    if (!isEditable(e.target)) return;
-
+    // Kısayollar sadece editable alanlarda değil, artık her yerde çalışabilir (isteğe bağlı)
+    // Ama genelde inputlarda çalışması beklenir. Kullanıcı "herhangi bir metni seçtiğimde" dediği için
+    // burada isEditable kontrolünü kaldırıyorum.
+    
     // Kısayol kontrolü
     const matchedProfile = profiles.find(p => {
         if (!p.shortcut) return false;
@@ -192,7 +190,6 @@ function handleKeydown(e) {
 
     if (matchedProfile) {
         e.preventDefault();
-        // Aktif elementi güncelle (odaklanılan element)
         activeElement = e.target;
         processTranslation(matchedProfile.targetLang);
     }
@@ -212,6 +209,12 @@ async function processTranslation(targetLang) {
     if (floatingBtn) floatingBtn.btn.textContent = '...';
 
     try {
+        if (!chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+            console.warn('Extension context invalid. Please refresh the page.');
+            // alert('Lütfen sayfayı yenileyin. Eklenti güncellendi.');
+            return;
+        }
+
         const response = await chrome.runtime.sendMessage({
             action: 'translate',
             text: text,
@@ -223,7 +226,6 @@ async function processTranslation(targetLang) {
             hideButton();
         } else {
             console.error('Çeviri hatası:', response ? response.error : 'Bilinmeyen hata');
-            // Kullanıcıyı rahatsız etmemek için alert yerine console log tercih edilebilir
         }
     } catch (err) {
         console.error(err);
@@ -234,8 +236,10 @@ async function processTranslation(targetLang) {
 }
 
 function replaceSelection(newText) {
-    // ContentEditable ve Input/Textarea için farklı yaklaşımlar
-    
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    // 1. Durum: Input veya Textarea
     if (document.activeElement && 
         (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
         
@@ -248,28 +252,38 @@ function replaceSelection(newText) {
         el.selectionStart = start + newText.length;
         el.selectionEnd = start + newText.length;
         
-        // Event tetikle
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
         
-    } else {
-        // ContentEditable (div vb.) için execCommand kullanımı (en güvenilir yöntem)
-        // document.execCommand 'deprecated' olsa da metin editörleri için hala standarttır.
-        if (document.queryCommandSupported('insertText')) {
-            document.execCommand('insertText', false, newText);
-        } else {
-            // Fallback: Range değişimi (daha karmaşık ve bazen sorunlu olabilir)
-            const selection = window.getSelection();
-            if (selection.rangeCount) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(document.createTextNode(newText));
-                
-                // İmleci sona taşı
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
+    } 
+    // 2. Durum: ContentEditable veya Normal Sayfa Metni (Selection Range)
+    else {
+        // execCommand 'insertText' en temiz yoldur çünkü undo/redo geçmişini korur.
+        let success = false;
+        if (document.queryCommandSupported('insertText') && document.isContentEditable) {
+            try {
+                success = document.execCommand('insertText', false, newText);
+            } catch (e) {
+                console.warn('execCommand failed', e);
             }
+        }
+
+        // Eğer execCommand başarısız olursa veya editable değilse (normal metin)
+        if (!success) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            
+            // Yeni metni ekle
+            const textNode = document.createTextNode(newText);
+            range.insertNode(textNode);
+            
+            // Seçimi temizle
+            selection.removeAllRanges();
+            
+            // İsteğe bağlı: Yeni metni seç (kullanıcı görsün diye)
+            const newRange = document.createRange();
+            newRange.selectNode(textNode);
+            selection.addRange(newRange);
         }
     }
 }
