@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Translate Ayarları</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Çeviri Ayarları</h1>
+        <p>Çeviri profillerinizi ve kısayollarınızı buradan yönetebilirsiniz.</p>
+        
+        <div id="profiles-container">
+            <!-- Profiller buraya dinamik olarak eklenecek -->
+        </div>
+
+        <button id="add-profile-btn" class="btn primary">+ Yeni Profil Ekle</button>
+        <button id="save-btn" class="btn success">Kaydet</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <!-- Profil Şablonu -->
+    <template id="profile-template">
+        <div class="profile-item">
+            <div class="form-group">
+                <label>Hedef Dil:</label>
+                <select class="target-lang">
+                    <option value="en">İngilizce (English)</option>
+                    <option value="tr">Türkçe (Turkish)</option>
+                    <option value="de">Almanca (German)</option>
+                    <option value="fr">Fransızca (French)</option>
+                    <option value="es">İspanyolca (Spanish)</option>
+                    <option value="it">İtalyanca (Italian)</option>
+                    <option value="ru">Rusça (Russian)</option>
+                    <option value="ja">Japonca (Japanese)</option>
+                    <option value="zh-CN">Çince (Chinese Simplified)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Kısayol Tuşu (Örn: Alt+1):</label>
+                <div class="shortcut-input-wrapper">
+                    <input type="text" class="shortcut-key" placeholder="Kısayola bas..." readonly>
+                    <button class="clear-shortcut" title="Temizle">x</button>
+                </div>
+            </div>
+            <button class="remove-profile-btn btn danger">Sil</button>
+        </div>
+    </template>
+
+    <script src="options.js"></script>
+</body>
+</html>
