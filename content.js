@@ -239,7 +239,7 @@ function replaceSelection(newText) {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
-    // 1. Durum: Input veya Textarea
+    // 1. Durum: Input veya Textarea (Düz metin)
     if (document.activeElement && 
         (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
         
@@ -254,33 +254,38 @@ function replaceSelection(newText) {
         
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
-        
     } 
-    // 2. Durum: ContentEditable veya Normal Sayfa Metni (Selection Range)
+    // 2. Durum: Normal Sayfa Metni (Selection Range)
     else {
-        // execCommand 'insertText' en temiz yoldur çünkü undo/redo geçmişini korur.
-        let success = false;
-        if (document.queryCommandSupported('insertText') && document.isContentEditable) {
-            try {
-                success = document.execCommand('insertText', false, newText);
-            } catch (e) {
-                console.warn('execCommand failed', e);
-            }
-        }
+        const range = selection.getRangeAt(0);
 
-        // Eğer execCommand başarısız olursa veya editable değilse (normal metin)
-        if (!success) {
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
+        // İyileştirme: Sadece metin içeriğini güncellemeye çalışalım.
+        // Eğer seçim sadece tek bir TextNode içindeyse (ki çoğu basit seçim öyledir)
+        // direkt nodeValue'yu değiştirirsek stil %100 korunur.
+        if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+            const node = range.startContainer;
+            const start = range.startOffset;
+            const end = range.endOffset;
+            const fullText = node.nodeValue;
             
-            // Yeni metni ekle
+            node.nodeValue = fullText.substring(0, start) + newText + fullText.substring(end);
+            
+            // Seçimi güncelle (yeni metni seçili yap)
+            selection.removeAllRanges();
+            const newRange = document.createRange();
+            newRange.setStart(node, start);
+            newRange.setEnd(node, start + newText.length);
+            selection.addRange(newRange);
+        } 
+        // 3. Durum: Karmaşık seçim (Birden fazla node veya element içeriyor)
+        // Burada deleteContents() mecburen kullanılır ama en azından insertNode 
+        // parent elementin stilini korur.
+        else {
+            range.deleteContents();
             const textNode = document.createTextNode(newText);
             range.insertNode(textNode);
             
-            // Seçimi temizle
             selection.removeAllRanges();
-            
-            // İsteğe bağlı: Yeni metni seç (kullanıcı görsün diye)
             const newRange = document.createRange();
             newRange.selectNode(textNode);
             selection.addRange(newRange);
